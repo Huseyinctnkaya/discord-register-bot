@@ -23,7 +23,7 @@ const client = new Client({
   partials: [Partials.GuildMember],
 });
 
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`Giriş yapıldı: ${client.user.tag}`);
 });
 

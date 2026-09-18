@@ -3,7 +3,7 @@ const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle 
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   try {
     const channel = await client.channels.fetch(process.env.KAYIT_KANAL_ID);
     const row = new ActionRowBuilder().addComponents(
