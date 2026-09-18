@@ -1,6 +1,35 @@
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 const { kayitEkle, kayitVarMi } = require('../database');
 
+/**
+ * Kayıt tamamlanınca üyenin nickname'ini "İsim (Bölüm)" formatına ayarlar.
+ *
+ * ÖNEMLİ: member.setNickname() sunucu sahibinde HER ZAMAN, ve botun rolünden
+ * yüksek/eşit role sahip üyelerde DiscordAPIError fırlatır (Discord kısıtı,
+ * spec'in Notlar bölümünde belirtilmiş). Bu fonksiyon ASLA throw etmemeli —
+ * çünkü çağrıldığı yerde (aşağıda) kayıt zaten veritabanına yazıldı ve rol
+ * değişimi bu fonksiyondan SONRA yapılıyor; burada atılacak bir hata kaydı
+ * yarım bırakır.
+ *
+ * TODO(kullanıcı): Nickname ayarlamayı dene, hata olursa yut ve logla.
+ * Karar senin: hata durumunda kullanıcıya ayrıca haber verilsin mi, yoksa
+ * sessizce mi geçilsin? (Şu anki interaction.reply akışı tek mesaj gönderiyor,
+ * ek bir mesaj göndermek istersen interaction nesnesini de parametre olarak
+ * geçirebilirsin.)
+ *
+ * @param {import('discord.js').GuildMember} member
+ * @param {string} isim
+ * @param {string} bolum
+ * @returns {Promise<void>}
+ */
+async function updateNickname(member, isim, bolum) {
+  try {
+    await member.setNickname(`${isim} (${bolum})`);
+  } catch (err) {
+    console.warn(`[interactionCreate] ${member.user.tag} için nickname değiştirilemedi:`, err.message);
+  }
+}
+
 module.exports = {
   name: 'interactionCreate',
   async execute(interaction, ctx) {
