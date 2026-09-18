@@ -33,7 +33,7 @@ module.exports = {
   name: 'interactionCreate',
   async execute(interaction, ctx) {
     if (interaction.isButton() && interaction.customId === 'kayit_ol_buton') {
-      if (kayitVarMi(ctx.db, interaction.user.id)) {
+      if (await kayitVarMi(ctx.db, interaction.user.id)) {
         await interaction.reply({ content: 'Zaten kayıtlısın!', ephemeral: true });
         return;
       }
@@ -75,12 +75,12 @@ module.exports = {
         return;
       }
 
-      if (kayitVarMi(ctx.db, interaction.user.id)) {
+      if (await kayitVarMi(ctx.db, interaction.user.id)) {
         await interaction.reply({ content: 'Zaten kayıtlısın!', ephemeral: true });
         return;
       }
 
-      kayitEkle(ctx.db, { discordId: interaction.user.id, isim, bolum: rol.ad });
+      await kayitEkle(ctx.db, { discordId: interaction.user.id, isim, bolum: rol.ad });
 
       await updateNickname(interaction.member, isim, rol.ad);
 
