@@ -10,8 +10,11 @@ const ctx = {
   db,
   roleIds: {
     kayitsiz: process.env.KAYITSIZ_ROLE_ID,
-    uye: process.env.UYE_ROLE_ID,
   },
+  roller: [
+    { ad: process.env.ROL1_AD, id: process.env.ROL1_ID },
+    { ad: process.env.ROL2_AD, id: process.env.ROL2_ID },
+  ],
   kayitKanalId: process.env.KAYIT_KANAL_ID,
 };
 

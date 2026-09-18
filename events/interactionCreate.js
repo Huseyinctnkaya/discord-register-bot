@@ -1,8 +1,13 @@
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const {
+  ModalBuilder,
+  LabelBuilder,
+  TextInputStyle,
+  StringSelectMenuOptionBuilder,
+} = require('discord.js');
 const { kayitEkle, kayitVarMi } = require('../database');
 
 /**
- * Kayıt tamamlanınca üyenin nickname'ini "İsim (Bölüm)" formatına ayarlar.
+ * Kayıt tamamlanınca üyenin nickname'ini "İsim (Rol)" formatına ayarlar.
  *
  * ÖNEMLİ: member.setNickname() sunucu sahibinde HER ZAMAN, ve botun rolünden
  * yüksek/eşit role sahip üyelerde DiscordAPIError fırlatır (Discord kısıtı,
@@ -11,20 +16,14 @@ const { kayitEkle, kayitVarMi } = require('../database');
  * değişimi bu fonksiyondan SONRA yapılıyor; burada atılacak bir hata kaydı
  * yarım bırakır.
  *
- * TODO(kullanıcı): Nickname ayarlamayı dene, hata olursa yut ve logla.
- * Karar senin: hata durumunda kullanıcıya ayrıca haber verilsin mi, yoksa
- * sessizce mi geçilsin? (Şu anki interaction.reply akışı tek mesaj gönderiyor,
- * ek bir mesaj göndermek istersen interaction nesnesini de parametre olarak
- * geçirebilirsin.)
- *
  * @param {import('discord.js').GuildMember} member
  * @param {string} isim
- * @param {string} bolum
+ * @param {string} rolAdi
  * @returns {Promise<void>}
  */
-async function updateNickname(member, isim, bolum) {
+async function updateNickname(member, isim, rolAdi) {
   try {
-    await member.setNickname(`${isim} (${bolum})`);
+    await member.setNickname(`${isim} (${rolAdi})`);
   } catch (err) {
     console.warn(`[interactionCreate] ${member.user.tag} için nickname değiştirilemedi:`, err.message);
   }
@@ -41,22 +40,26 @@ module.exports = {
 
       const modal = new ModalBuilder().setCustomId('kayit_modal').setTitle('Kayıt Formu');
 
-      const isimInput = new TextInputBuilder()
-        .setCustomId('isim')
+      const isimLabel = new LabelBuilder()
         .setLabel('İsim')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+        .setTextInputComponent(input =>
+          input.setCustomId('isim').setStyle(TextInputStyle.Short).setRequired(true)
+        );
 
-      const bolumInput = new TextInputBuilder()
-        .setCustomId('bolum')
-        .setLabel('Bölüm')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+      const rolLabel = new LabelBuilder()
+        .setLabel('Rol')
+        .setStringSelectMenuComponent(select =>
+          select
+            .setCustomId('rol')
+            .setRequired(true)
+            .setMinValues(1)
+            .setMaxValues(1)
+            .addOptions(
+              ctx.roller.map(rol => new StringSelectMenuOptionBuilder().setLabel(rol.ad).setValue(rol.id))
+            )
+        );
 
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(isimInput),
-        new ActionRowBuilder().addComponents(bolumInput)
-      );
+      modal.addLabelComponents(isimLabel, rolLabel);
 
       await interaction.showModal(modal);
       return;
@@ -64,10 +67,11 @@ module.exports = {
 
     if (interaction.isModalSubmit() && interaction.customId === 'kayit_modal') {
       const isim = interaction.fields.getTextInputValue('isim').trim();
-      const bolum = interaction.fields.getTextInputValue('bolum').trim();
+      const rolId = interaction.fields.getStringSelectValues('rol')[0];
+      const rol = ctx.roller.find(r => r.id === rolId);
 
-      if (!isim || !bolum) {
-        await interaction.reply({ content: 'İsim ve bölüm alanları boş olamaz, lütfen tekrar dene.', ephemeral: true });
+      if (!isim || !rol) {
+        await interaction.reply({ content: 'İsim ve rol alanları boş olamaz, lütfen tekrar dene.', ephemeral: true });
         return;
       }
 
@@ -76,13 +80,13 @@ module.exports = {
         return;
       }
 
-      kayitEkle(ctx.db, { discordId: interaction.user.id, isim, bolum });
+      kayitEkle(ctx.db, { discordId: interaction.user.id, isim, bolum: rol.ad });
 
-      await updateNickname(interaction.member, isim, bolum);
+      await updateNickname(interaction.member, isim, rol.ad);
 
       try {
         await interaction.member.roles.remove(ctx.roleIds.kayitsiz);
-        await interaction.member.roles.add(ctx.roleIds.uye);
+        await interaction.member.roles.add(rol.id);
       } catch (err) {
         console.error(`[interactionCreate] ${interaction.user.tag} için rol güncellenemedi:`, err.message);
         await interaction.reply({
