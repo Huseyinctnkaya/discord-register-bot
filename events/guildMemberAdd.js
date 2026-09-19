@@ -1,3 +1,5 @@
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
 module.exports = {
   name: 'guildMemberAdd',
   async execute(member, ctx) {
@@ -21,9 +23,13 @@ module.exports = {
     // izin ayarından bağımsız olarak her zaman görünür.
     try {
       const kayitKanali = await member.guild.channels.fetch(ctx.kayitKanalId);
-      await kayitKanali.send(
-        `${member} sunucuya hoş geldin! Kayıt olmak için yukarıdaki "Kayıt Ol" butonuna tıkla.`
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('kayit_ol_buton').setLabel('Kayıt Ol').setStyle(ButtonStyle.Primary)
       );
+      await kayitKanali.send({
+        content: `${member} sunucuya hoş geldin! Kayıt olmak için aşağıdaki butona tıkla.`,
+        components: [row],
+      });
     } catch (err) {
       console.error(`[guildMemberAdd] ${member.user.tag} için kayıt kanalına hoş geldin mesajı gönderilemedi:`, err.message);
     }
