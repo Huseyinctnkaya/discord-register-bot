@@ -7,7 +7,7 @@ const {
 const { kayitEkle, kayitVarMi } = require('../database');
 
 /**
- * Kayıt tamamlanınca üyenin nickname'ini "İsim (Rol)" formatına ayarlar.
+ * Kayıt tamamlanınca üyenin nickname'ini "[TÜ] İsim" formatına ayarlar.
  *
  * ÖNEMLİ: member.setNickname() sunucu sahibinde HER ZAMAN, ve botun rolünden
  * yüksek/eşit role sahip üyelerde DiscordAPIError fırlatır (Discord kısıtı,
@@ -18,12 +18,11 @@ const { kayitEkle, kayitVarMi } = require('../database');
  *
  * @param {import('discord.js').GuildMember} member
  * @param {string} isim
- * @param {string} rolAdi
  * @returns {Promise<void>}
  */
-async function updateNickname(member, isim, rolAdi) {
+async function updateNickname(member, isim) {
   try {
-    await member.setNickname(`${isim} (${rolAdi})`);
+    await member.setNickname(`[TÜ] ${isim}`);
   } catch (err) {
     console.warn(`[interactionCreate] ${member.user.tag} için nickname değiştirilemedi:`, err.message);
   }
@@ -79,7 +78,7 @@ async function handleInteraction(interaction, ctx) {
 
     await kayitEkle(ctx.db, { discordId: interaction.user.id, isim, bolum: rol.ad });
 
-    await updateNickname(interaction.member, isim, rol.ad);
+    await updateNickname(interaction.member, isim);
 
     try {
       await interaction.member.roles.remove(ctx.roleIds.kayitsiz);
